@@ -1,4 +1,3 @@
-www
-===
+Copyright Xiaomeng Ye & Han Qin, 2013
 
-Web code
+This repository is for wb code
