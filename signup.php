@@ -5,7 +5,36 @@
 
 <?php
   if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    header('Location: http://' . $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . '/index.php');
+    // Update the DB with the new data
+    $bu_name = $_POST['name'];
+    $bu_category = $_POST['category'];
+    $bu_sub_category = $_POST['sub_category'];
+    $bu_login = $_POST['username'];
+    $bu_password = $_POST['password'];
+    $bu_intro = $_POST['intro'];
+
+    $stmt = 'INSERT INTO business_unit (name, login, password, category, sub_category, intro)'
+            . ' VALUES ("' . $bu_name . '", "' . $bu_login . '", "' . $bu_password
+            . '", "' . $bu_category . '", "' . $bu_sub_category . '", "' . $bu_intro . '")';
+
+    $mysql_client = mysqli_connect('koodemo.cwmhshxpuljc.us-west-2.rds.amazonaws.com',
+                                   'koomaster',
+                                   'koopassword',
+                                   'koodb');
+    if ($mysql_client->connect_errno) {
+      echo 'Failed to connect to Mysql: ' . $mysql_client->error
+           . ' (' . $mysql_client->connect_errno . ')';
+      return;
+    } else {
+      if ($mysql_client->query($stmt) === TRUE) {
+        $mysql_client->close();
+        header('Location: http://' . $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . '/index.php');
+      } else {
+        echo 'Failed to insert new business to Mysql: ' . $mysql_client->error;
+        $mysql_client->close();
+        return;
+      }
+    }
   }
 ?>
 

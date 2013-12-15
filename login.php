@@ -4,15 +4,53 @@
 </head>
 
 <?php
-  if ($_SERVER['REQUEST_METHOD'] == 'POST' &&
-      $_REQUEST['password'] == '12345') {
-    header('Location: http://' . $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . '/index.php');
+  if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $user = $_REQUEST['username'];
+    $pswd = $_REQUEST['password'];
+
+    $mysqli = mysqli_connect('koodemo.cwmhshxpuljc.us-west-2.rds.amazonaws.com',
+                             'koomaster',
+                             'koopassword',
+                             'koodb');
+    if ($mysqli->connect_errno) {
+      echo 'Failed to connect to Mysql: ' . $mysqli->error
+           . ' (' . $mysqli->connect_errno . ')';
+      return;
+    } else {
+      $stmt = 'SELECT password FROM business_unit WHERE login="' . $user . '"';
+      $result = $mysqli->query($stmt);
+      if ($result && $result->num_rows == 1) {
+        $row = $result->fetch_array();
+        if ($row['password'] === $pswd) {
+          // Authentication succeeded
+          $result->close();
+          $mysqli->close();
+          header('Location: http://' . $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . '/index.php');
+        }
+      }
+
+      // Authentication failed, clean up
+      if ($result) {
+        $result->close();
+      }
+      $mysqli->close();
+      $msg = 'Failed to authenticate user "' . $user . '"';
+    }
   }
 ?>
 
 <body>
   <form action='login.php' method='post'>
     <table>
+<?php
+  if ($msg) {
+?>
+      <tr>
+        <td colspan='2' style='color: red'><?php echo $msg; ?></td>
+      </tr>
+<?php
+  }
+?>
       <tr>
         <td colspan='2'>Please enter the username and password...</td>
       </tr>
