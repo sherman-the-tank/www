@@ -5,6 +5,7 @@
 <?php
   $party_size = $_REQUEST['party_size'];
   $buid = $_REQUEST['business_unit'];
+  $reserved_time = $_REQUEST['reserved_time'];
 
   $mysqli = mysqli_connect('koodemo.cwmhshxpuljc.us-west-2.rds.amazonaws.com',
                            'koomaster',
@@ -16,8 +17,13 @@
     return;
   }
   
-  $stmt = 'SELECT id FROM bu_tables WHERE bu_id=' . $buid . ' AND NOT reserved AND capacity>='
-          . $party_size . ' ORDER BY capacity LIMIT 1';
+  $stmt = 'SELECT id FROM bu_tables t WHERE t.bu_id=' . $buid
+          . ' AND t.capacity>=' . $party_size
+          . ' AND t.id NOT IN'
+          . ' (SELECT table_id FROM reservation r WHERE r.bu_id=' . $buid
+          . ' AND ADDTIME(r.reserved_time, "1:00:00")>="' . $reserved_time . '"'
+          . ' AND ADDTIME("' . $reserved_time . '", "1:00:00")>=r.reserved_time)'
+          . ' ORDER BY t.capacity LIMIT 1';
   $result = $mysqli->query($stmt);
   if ($result && $result->num_rows == 1) {
     // Found one table
@@ -25,8 +31,9 @@
     $table_id = $row['id'];
     $result->close();
     // Mark the table is reserved
-    $stmt = 'UPDATE bu_tables SET reserved=1 WHERE id=' . $table_id
-            . ' AND bu_id=' . $buid;
+    $stmt = 'INSERT INTO reservation SET bu_id=' . $buid
+            . ', table_id=' . $table_id
+            . ', reserved_time="' . $reserved_time . '"';
     if ($mysqli->query($stmt) === TRUE) {
       echo $table_id;
     } else {
